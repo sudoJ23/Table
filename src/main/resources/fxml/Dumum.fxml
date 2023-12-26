@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="646.0" prefWidth="1300.0" stylesheets="@../styles/pos.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.rafsan.inventory.controller.billiard.BilliardController">
+  <children>
+      <HBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="65.0" prefWidth="100.0" styleClass="header" VBox.vgrow="NEVER">
+         <VBox.margin>
+            <Insets />
+         </VBox.margin>
+      </HBox>
+      <SplitPane dividerPositions="1.0" prefWidth="1300.0" VBox.vgrow="ALWAYS">
+        <items>
+            <ScrollPane fx:id="scrollpaneKiri" hbarPolicy="NEVER" maxWidth="570.0" pannable="true" prefHeight="570.0" prefWidth="570.0">
+               <content>
+                  <GridPane fx:id="tGridLayar" hgap="5.0" minHeight="350.0" minWidth="350.0" prefHeight="1990.0" prefWidth="550.0" vgap="5.0">
+                     <rowConstraints>
+                        <RowConstraints maxHeight="218.0" minHeight="218.0" prefHeight="218.0" vgrow="ALWAYS" />
+                        <RowConstraints maxHeight="218.0" minHeight="218.0" prefHeight="218.0" vgrow="ALWAYS" />
+                        <RowConstraints maxHeight="218.0" minHeight="218.0" prefHeight="218.0" vgrow="SOMETIMES" />
+                     </rowConstraints>
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                     <columnConstraints>
+                        <ColumnConstraints maxWidth="187.0" minWidth="187.0" prefWidth="187.0" />
+                        <ColumnConstraints maxWidth="187.0" minWidth="187.0" prefWidth="187.0" />
+                        <ColumnConstraints maxWidth="187.0" minWidth="187.0" prefWidth="187.0" />
+                     </columnConstraints>
+                  </GridPane>
+               </content>
+            </ScrollPane>
+            <VBox prefWidth="100.0">
+               <children>
+                  <TableView fx:id="transList" minHeight="-Infinity" minWidth="-Infinity" prefHeight="419.0" prefWidth="410.0" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="tTableId" prefWidth="100.0" text="ID" />
+                        <TableColumn fx:id="tTableStation" prefWidth="87.0" text="Station" />
+                        <TableColumn fx:id="tTableDurasi" text="Durasi" />
+                        <TableColumn fx:id="tTableTransStart" prefWidth="130.0" text="Trans-Start" />
+                        <TableColumn fx:id="tTableTransClose" prefWidth="212.0" text="Trans-Close" />
+                    </columns>
+                  </TableView>
+                  <HBox prefHeight="0.0" prefWidth="722.0">
+                     <children>
+                        <VBox prefHeight="200.0" prefWidth="100.0" />
+                        <Pane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 10;" stylesheets="@../styles/pos.css" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+        </items>
+      </SplitPane>
+  </children>
+</VBox>

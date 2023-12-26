@@ -1,0 +1,14 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+"-//Hibernate/Hibernate Configuration DTD//EN"
+"http://www.hibernate.org/dtd/hibernate-configuration.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+        <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+        <property name="hibernate.current_session_context_class">thread</property>
+        <mapping class="com.rafsan.inventory.entity.Station"/>
+        <mapping class="com.rafsan.inventory.entity.Transaction"/>
+        <mapping class="com.rafsan.inventory.entity.TablePackage"/>
+        <mapping class="com.rafsan.inventory.entity.TableTransaction"/>
+    </session-factory>
+</hibernate-configuration>
