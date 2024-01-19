@@ -575,7 +575,7 @@ public class ActiveTransactionModel {
                 timer.setParent(table);
                 timer.setActiveTransactionModel(this);
                 timer.getActiveTransactionModel().setParent(parent);
-                timer.IncrementTotalAmount(Double.parseDouble(tableTransaction.getAmount()));
+                timer.setTotalAmount(Double.parseDouble(tableTransaction.getAmount()));
 
                 table.setStationController(tb.getStationController());
                 table.setNode(tb.getNode());
