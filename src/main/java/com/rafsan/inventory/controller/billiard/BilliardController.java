@@ -157,7 +157,9 @@ public class BilliardController implements Initializable {
             }
             ACTIVETRANS.clear();
             try {
-                activeTransactionModel.getTable();
+                // TODO: uncomment line below to restore logic
+                // activeTransactionModel.getTable();
+                activeTransactionModel.getTableUsingCalculation();
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }

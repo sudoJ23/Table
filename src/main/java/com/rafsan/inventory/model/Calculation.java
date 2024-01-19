@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -27,10 +28,14 @@ public class Calculation {
 
     private double totalTarif;
     private long sisaWaktu;
+    private long durasi;
+    private List<LocalDateTime> timeList;
 
     public Calculation(TableTransaction transaction, Date upto) {
         this.totalTarif = 0;
         this.sisaWaktu = 0;
+        this.durasi = 0;
+        this.timeList = new ArrayList<>();
 
         this.calculate(transaction, upto);
     }
@@ -43,19 +48,44 @@ public class Calculation {
         return sisaWaktu;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("- total Tarif : Rp").append(Math.round(totalTarif));
-        sb.append("\n");
-        String formatted = String.format(
+    public String getSisaWaktuFormatted() {
+        return String.format(
                 Locale.getDefault(),
                 "%02d:%02d:%02d",
                 sisaWaktu / 3600,
                 (sisaWaktu % 3600) / 60,
                 sisaWaktu % 60
         );
-        sb.append("- sisa Waktu : ").append(formatted);
+    }
+    
+    public boolean isLewat() {
+        return sisaWaktu == 0;
+    }
+
+    public long getDurasi() {
+        return durasi;
+    }
+
+    public String getDurasiFormatted() {
+        return String.format(
+                Locale.getDefault(),
+                "%02d:%02d:%02d",
+                durasi / 3600,
+                (durasi % 3600) / 60,
+                durasi % 60
+        );
+    }
+    
+    public List<LocalDateTime> getTimeList() {
+        return timeList;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("- total Tarif : Rp").append(Math.round(totalTarif));
+        sb.append("\n");
+        sb.append("- sisa Waktu : ").append(getSisaWaktuFormatted());
         return sb.toString();
     }
 
@@ -87,6 +117,8 @@ public class Calculation {
         LocalDateTime end = begin.plus(target.getSeconds(), ChronoUnit.SECONDS).withNano(0);
         Duration diffSisa = Duration.between(activeTimer, end);
         this.sisaWaktu = diffSisa.getSeconds();
+        Duration durasi = Duration.between(begin, activeTimer);
+        this.durasi = durasi.getSeconds();
 
         List<Rate> rates = mRate.getAvailableRates(begin, activeTimer);
 
@@ -97,15 +129,19 @@ public class Calculation {
 
         // single range rate
         if (rates.size() == 1) {
-            Rate rate = rates.get(0);
-            int every = rate.getEvery();
-            LocalDateTime time = begin.plus(every, ChronoUnit.SECONDS).withNano(0);
             if (activeTimer.isAfter(end)) {
                 activeTimer = end;
                 if (this.sisaWaktu < 0) {
                     this.sisaWaktu = 0;
+
+                    durasi = Duration.between(begin, end);
+                    this.durasi = durasi.getSeconds();
                 }
             }
+
+            Rate rate = rates.get(0);
+            int every = rate.getEvery();
+            LocalDateTime time = begin.plus(every, ChronoUnit.SECONDS).withNano(0);
 
             while (time.isBefore(activeTimer) || time.isEqual(activeTimer)) {
                 boolean hourIsEqual = activeTimer.getHour() == time.getHour();
@@ -115,6 +151,7 @@ public class Calculation {
                     totalTarif += rate.getRate();
                 }
 
+                timeList.add(time);
                 printRateEveryMinute(rate.getRate(), time);
 
                 // increment calculation time
@@ -165,6 +202,7 @@ public class Calculation {
                     total += rate.getRate();
                     totalTarif += rate.getRate();
 
+                    timeList.add(time);
                     printRateEveryMinute(rate.getRate(), time);
                 }
 
