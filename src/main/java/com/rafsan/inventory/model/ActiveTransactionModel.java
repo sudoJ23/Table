@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import javafx.fxml.FXML;
@@ -108,7 +109,7 @@ public class ActiveTransactionModel {
         // System.out.println("Every : " + every);
         // System.out.println("Tarif : " + tarif);
         // System.out.println("Waktu : " + waktu);
-        double[] hasil = { totalTarif, sisaWaktu };
+        double[] hasil = {totalTarif, sisaWaktu};
         return hasil;
     }
 
@@ -125,7 +126,7 @@ public class ActiveTransactionModel {
         isLoadTableFinish = false;
         session = HibernateUtil.getSessionFactory().openSession();
         List<TableTransaction> tableTransactions = new ArrayList<>();
-        
+
         try {
             session.beginTransaction();
             tableTransactions = session.createQuery("from TableTransaction").list();
@@ -151,8 +152,8 @@ public class ActiveTransactionModel {
 
                     Instant instant = tableTransaction.getStart().toInstant();
                     LocalDateTime dateTime1 = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()); // Waktu
-                                                                                                        // meja
-                                                                                                        // start
+                    // meja
+                    // start
 
                     LocalDateTime dateTime2 = LocalDateTime.now(); // Waktu sekarang
                     LocalDateTime lastSingleDate = LocalDateTime.now();
@@ -202,7 +203,7 @@ public class ActiveTransactionModel {
                                         int tmp = totalDurasiSekarang;
                                         System.out.println("Sisa Rate count : " + rounding);
                                         System.out.println("Total durasi sekarang : " + totalDurasiSekarang);
-                                        totalDurasiSekarang=0;
+                                        totalDurasiSekarang = 0;
 
                                         TablePackage tblPkg = new TablePackageModel()
                                                 .getTablePackage(activeP.getPackageId());
@@ -216,10 +217,10 @@ public class ActiveTransactionModel {
                                                     if (rounding <= ratesebelumnya.getEvery()) {
                                                         System.out.println("Sisa waktu sebelum perpindahan kurang dari every");
                                                         sisawaktu = rounding;
-                                                        int temp = ((ratesebelumnya.getEvery()/60)+(pembulatan/60));
+                                                        int temp = ((ratesebelumnya.getEvery() / 60) + (pembulatan / 60));
                                                         lastDate = currentDateTime;
                                                         currentDateTime = currentDateTime.plusMinutes(temp);
-                                                        System.out.println("total pembulatan :" +pembulatan);
+                                                        System.out.println("total pembulatan :" + pembulatan);
                                                         System.out.println(ratesebelumnya.getEvery());
                                                     }
                                                 } else {
@@ -272,12 +273,12 @@ public class ActiveTransactionModel {
                             rateawal = availableRate;
                         }
 
-                        double[] hasil = hitungTarif(totalDurasiSekarang - 1, ratesekarang.getRate(),ratesekarang.getEvery());
+                        double[] hasil = hitungTarif(totalDurasiSekarang - 1, ratesekarang.getRate(), ratesekarang.getEvery());
                         totalkeseluruhan += hasil[0];
                         int temp = (int) (hasil[1] * 60);
                         System.out.println("temp :" + temp);
                         System.out.println("Total durasi sekarang : " + totalDurasiSekarang);
-                            ratecount = (int) (hasil[1] * 60);
+                        ratecount = (int) (hasil[1] * 60);
 
                         Duration durasiSebelumnya = Duration.between(lastDate, currentDateTime);
                         System.out.println("Total durasi rate sekarang : "
@@ -447,7 +448,7 @@ public class ActiveTransactionModel {
                             table.getStationController().tPaket.setText(tableTransaction.getTablePackage().getName());
                             table.getStationController().tStatusMeja.setImage(new Image("/images/start.png"));
                             table.getStationController().mainFrame.setStyle("-fx-background-color: #96EA93; -fx-background-radius: 10px;");
-                            table.getStationController().tDurasiMeja.setText(String.format("%02d:%02d:%02d", targetDuration.toHours(),targetDuration.toMinutes() % 60, targetDuration.getSeconds() % 60));
+                            table.getStationController().tDurasiMeja.setText(String.format("%02d:%02d:%02d", targetDuration.toHours(), targetDuration.toMinutes() % 60, targetDuration.getSeconds() % 60));
                             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/TPilPaket.fxml"));
                             Parent root = loader.load();
                             packageController PackageController = loader.getController();
@@ -517,6 +518,169 @@ public class ActiveTransactionModel {
                 ACTIVETRANS.add(table);
             }
         }
+        isLoadTableFinish = true;
+    }
+
+    public void getTableUsingCalculation() throws IOException, InterruptedException {
+        NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("in", "ID"));
+        format.setMaximumFractionDigits(0);
+        isLoadTableFinish = false;
+        session = HibernateUtil.getSessionFactory().openSession();
+        List<TableTransaction> tableTransactions = new ArrayList<>();
+
+        try {
+            session.beginTransaction();
+            tableTransactions = session.createQuery("from TableTransaction").list();
+        } catch (Exception e) {
+            if (session.getTransaction() != null) {
+                session.getTransaction().rollback();
+            }
+        } finally {
+            session.close();
+        }
+
+        for (TableTransaction tableTransaction : tableTransactions) {
+            if (tableTransaction.getStatus() != (short) 0) {
+                System.out.println(tableTransaction.getId());
+                Tables table = new Tables(tableTransaction.getStation());
+                table.setTableTransaction(tableTransaction);
+                table.setTransaction(tableTransaction.getTransaction());
+                ACTIVETRANS.add(table);
+                continue;
+            }
+
+            if (tableTransaction.getPowerFailure() != (short) 0) {
+                continue;
+            }
+
+            Calendar cal = Calendar.getInstance();
+            Calculation result = new Calculation(tableTransaction, cal.getTime());
+
+            tableTransaction.setAmount(String.valueOf(result.getTotalTarif()));
+            tableTransaction.setDuration(result.getDurasiFormatted());
+            new TableTransactionModel().updateTableTransaction(tableTransaction);
+
+            Tables table = new Tables(tableTransaction.getStation());
+            table.setTableTransaction(tableTransaction);
+            table.setTransaction(tableTransaction.getTransaction());
+
+            for (int index = 0; index < TABLELIST.size(); index++) {
+                Tables tb = TABLELIST.get(index);
+                if (!tb.getStation().getName().equals(table.getStation().getName())) {
+                    continue;
+                }
+
+                ActivePackage activePackage = table.getTableTransaction().getTablePackage().getActivePackage();
+                Timer timer = new Timer();
+                timer.setParent(table);
+                timer.setActiveTransactionModel(this);
+                timer.getActiveTransactionModel().setParent(parent);
+                timer.setTotalAmount(Double.parseDouble(tableTransaction.getAmount()));
+
+                table.setStationController(tb.getStationController());
+                table.setNode(tb.getNode());
+                table.setActivePackage(activePackage);
+                table.setTimer(timer);
+                table.getStationController().setTables(table);
+                table.getStationController().setData();
+
+                Duration durationSisa = Duration.ofSeconds(result.getSisaWaktu());
+                String[] idk = result.getSisaWaktuFormatted().split(":");
+                int hour = Integer.parseInt(idk[0]);
+                int minute = Integer.parseInt(idk[1]);
+                int second = 0;
+                int totalSeconds = hour * 3600 + minute * 60 + second;
+                durationSisa = Duration.ofSeconds(totalSeconds);
+                String sisaDurasi = String.format("%02d:%02d:%02d", durationSisa.toHours(), durationSisa.toMinutes() % 60, durationSisa.getSeconds() % 60);
+
+                table.getTimer().setMulai(result.getDurasiFormatted());
+                Duration targetDuration = Duration.ofSeconds(Long.parseLong(tableTransaction.getTarget()));
+
+                table.getTimer().setCount((int) result.getDurasi());
+//                table.getTimer().setRateCount(ratecount);
+                table.getTimer().setDurationSisa(tableTransaction.getDuration(), sisaDurasi);
+                table.getTimer().setStationController(table.getStationController());
+                table.getTimer().setTarget((int) durationSisa.getSeconds());
+                if (result.isLewat()) {
+//                    table.getTimer().setLastSingleDate(lastSingleDate);
+                    table.getTimer().startTimer(true, true);
+                } else {
+                    table.getTimer().startTimer(true, false);
+                }
+//                if (!activePackage.isSingle()) {
+//                    if (rateCount > 1) {
+//                        table.getTimer().rateCount = rateCount;
+//                        table.getTimer().setRateAwal(rateawal);
+//                        table.getTimer().setRateSelanjutnya(rateselanjutnya);
+//                        table.getTimer().setRateSebelumnya(ratesebelumnya);
+//                    }
+//                }
+                table.getStationController().tPaket.setText(tableTransaction.getTablePackage().getName());
+                table.getStationController().tStatusMeja.setImage(new Image("/images/start.png"));
+                table.getStationController().mainFrame.setStyle("-fx-background-color: #96EA93; -fx-background-radius: 10px;");
+                table.getStationController().tDurasiMeja.setText(String.format("%02d:%02d:%02d", targetDuration.toHours(), targetDuration.toMinutes() % 60, targetDuration.getSeconds() % 60));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/TPilPaket.fxml"));
+                Parent root = loader.load();
+                packageController PackageController = loader.getController();
+                Scene scene = new Scene(root);
+                Stage stage = new Stage();
+                root.setOnMousePressed((MouseEvent e) -> {
+                    xOffset = e.getSceneX();
+                    yOffset = e.getSceneY();
+                });
+                root.setOnMouseDragged((MouseEvent e) -> {
+                    stage.setX(e.getScreenX() - xOffset);
+                    stage.setY(e.getScreenY() - yOffset);
+                });
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setTitle("Start Table");
+                scene.setFill(Color.TRANSPARENT);
+                stage.initStyle(StageStyle.TRANSPARENT);
+                stage.setScene(scene);
+                table.getTimer().setPackageControllerStage(stage);
+                PackageController.nomorMeja.setText(table.getStation().getName());
+                PackageController.setPackages(table.getStation().getName());
+                PackageController.setParent(table.getStationController());
+                PackageController.pilPaketList.setValue(table.getTableTransaction().getTablePackage().getName());
+                PackageController.setTables(table);
+                int target = (int) targetDuration.getSeconds();
+                if (target >= 0 && target < 1) {
+                    PackageController.pilPaketListJam.setValue("00:00:00");
+                } else {
+                    Duration tempDuration = Duration.ofSeconds(target);
+                    PackageController.pilPaketListJam.setValue(String.format("%02d", tempDuration.toHours()) + ":" + String.format("%02d", tempDuration.toMinutes()) + ":" + String.format("%02d", tempDuration.getSeconds()));
+                }
+                PackageController.setInit(table.getTimer().getIsRunning(), table.getTimer().getIsFinished(), false);
+                table.getTimer().setPackageController(PackageController);
+                table.getTableTransaction().setStatus((short) 0);
+                table.getTableTransaction().setPowerFailure((short) 0);
+                if (result.isLewat()) {
+                    LocalDateTime lastSingleDate = result.getTimeList().get(result.getTimeList().size() - 1);
+                    Rate rate = activePackage.getRateList().getAvailableRateByTime(lastSingleDate);
+                    table.accumulate(false, rate.getMinRate());
+                } else {
+                    Rate rate = activePackage.getRateList().getAvailableRate();
+                    table.accumulate(false, rate.getMinRate());
+                }
+                new TableTransactionModel().updateTableTransaction(table.getTableTransaction());
+                TABLELIST.set(index, table);
+                boolean masih = result.getSisaWaktu() > 0;
+                if (!masih) {
+                    Duration ss = Duration.ofSeconds(Long.parseLong(table.getTableTransaction().getTarget()));
+                    table.getTableTransaction().setDuration(String.format("%02d:%02d:%02d", ss.toHours(), ss.toMinutes() % 60, ss.getSeconds() % 60));
+                    table.getTimer().stopTimer(true, result.isLewat());
+                    new TableTransactionModel().updateTableTransaction(table.getTableTransaction());
+                    PackageController.stop();
+                } else if (result.isLewat()) {
+                    Duration ss = Duration.ofSeconds(result.getDurasi());
+                    table.getTableTransaction().setDuration(String.format("%02d:%02d:%02d", ss.toHours(), ss.toMinutes() % 60, ss.getSeconds() % 60));
+                    table.getTimer().stopTimer(true, result.isLewat());
+                    new TableTransactionModel().updateTableTransaction(table.getTableTransaction());
+                    PackageController.stop();
+                }
+            }
+        }
+
         isLoadTableFinish = true;
     }
 }

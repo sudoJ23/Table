@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rafsan.inventory.utility.TimeConverter;
+import com.rafsan.inventory.utility.TimeFormat;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import java.io.Serializable;
 import java.util.List;
@@ -214,4 +216,58 @@ public class TablePackage implements Serializable {
         return deleted;
     }
     
+    public ActivePackage getActivePackage() {
+        TimeConverter timeConverter = new TimeConverter();
+        ActivePackage activePackage = new ActivePackage(getName());
+        activePackage.setPackageId(getId());
+        MRate mrate = new MRate();
+
+        if (getRate() == null) {
+            int currentIndex = 0;
+            activePackage.setSingle(false);
+            String[] multirate = getMultiRate().split("~");
+            String[] multievery = getMultiEvery().split(",");
+            String[] multiminrate = getMultiMinRate().split(",");
+            String[] mfrom = getMFrom().split(",");
+            String[] mto = getMTo().split(",");
+
+            for (String rt : multirate) {
+                double tableRate = Double.parseDouble(rt);
+                int every = calculate(timeConverter.convert(multievery[currentIndex]));
+                double minrate = Double.parseDouble(multiminrate[currentIndex]);
+                String MToTime = mto[currentIndex];
+                String MFromTime = mfrom[currentIndex];
+                Rate rate = new Rate(tableRate, every, minrate, MFromTime, MToTime);
+                mrate.addRate(rate);
+                currentIndex++;
+            }
+        } else {
+            activePackage.setSingle(true);
+            double tableRate = Double.parseDouble(getRate());
+            int every = calculate(timeConverter.convert(getEvery()));
+            double minrate = Double.parseDouble(getMinRate());
+            String MToTime = getMTo();
+            String MFromTime = getMFrom();
+            Rate rate = new Rate(tableRate, every, minrate, MFromTime, MToTime);
+            mrate.addRate(rate);
+        }
+
+        activePackage.setRateList(mrate);
+        activePackage.setPrice(Double.parseDouble(getPrice()));
+
+        return activePackage;
+    }
+
+    private int calculate(TimeFormat time) {
+        int totalminutes, totalseconds;
+        if (time.getHours() != 0) {
+            totalminutes = time.getHours() * 60;
+            totalseconds = time.getMinutes() + totalminutes * 60;
+        } else {
+            totalseconds = time.getMinutes() * 60;
+        }
+        totalseconds += time.getSeconds();
+
+        return totalseconds;
+    }
 }

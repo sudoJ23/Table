@@ -5,6 +5,7 @@ import com.rafsan.inventory.controller.billiard.packageController;
 import com.rafsan.inventory.core;
 import static com.rafsan.inventory.interfaces.StationInterface.STATIONLIST;
 import com.rafsan.inventory.model.ActiveTransactionModel;
+import com.rafsan.inventory.model.Calculation;
 import com.rafsan.inventory.model.StationModel;
 import com.rafsan.inventory.model.TablePackageModel;
 import com.rafsan.inventory.model.TableTransactionModel;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +95,10 @@ public class Timer {
     
     public Rate getRateSelanjutnya() {
         return rateselanjutnya;
+    }
+    
+    public void setTotalAmount(double amount) {
+        this.totalamount = amount;
     }
     
     public void IncrementTotalAmount(double amount) {
@@ -267,21 +273,22 @@ public class Timer {
             int pembulatan = Integer.valueOf(parent.getTableTransaction().getTablePackage().getPembulatan());
             if (ratecount > pembulatan) {
                 if (!terganti) {
-                    java.time.Duration duration = java.time.Duration.ofSeconds(rate.getEvery());
-                    java.time.Duration evr = java.time.Duration.ofSeconds(rate.getEvery());
-                    double totalmenit = duration.toMinutes();
-                    double waktuBulat = Math.ceil(totalmenit / evr.toMinutes()) * evr.toMinutes();
-                    double waktu = waktuBulat;
-                    double tarif = rate.getRate();
-                    double jumlahBlok = waktu / evr.toMinutes();
-                    double biaya = jumlahBlok * tarif;
-                    totalamount += biaya;
+                    // java.time.Duration duration = java.time.Duration.ofSeconds(rate.getEvery());
+                    // java.time.Duration evr = java.time.Duration.ofSeconds(rate.getEvery());
+                    // double totalmenit = duration.toMinutes();
+                    // double waktuBulat = Math.ceil(totalmenit / evr.toMinutes()) * evr.toMinutes();
+                    // double waktu = waktuBulat;
+                    // double tarif = rate.getRate();
+                    // double jumlahBlok = waktu / evr.toMinutes();
+                    // double biaya = jumlahBlok * tarif;
+                    Calculation result = new Calculation(parent.getTableTransaction(), Calendar.getInstance().getTime());
+                    totalamount = result.getTotalTarif();
                     SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-                    System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + biaya);
+                    // System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + biaya);
                     System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + totalamount);
 
                     parent.accumulate(false, rateawal.getMinRate());
-//                    parent.accumulate(false, rate.getMinRate());
+                    // parent.accumulate(false, rate.getMinRate());
 
                     parent.tableTransaction.setAmount(String.valueOf(totalamount));
                     tableTransactionModel.updateTableTransaction(parent.tableTransaction);
