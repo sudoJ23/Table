@@ -29,7 +29,7 @@ public class Calculation {
     private double totalTarif;
     private long sisaWaktu;
     private long durasi;
-    private List<LocalDateTime> timeList;
+    private final List<LocalDateTime> timeList;
 
     public Calculation(TableTransaction transaction, Date upto) {
         this.totalTarif = 0;
@@ -202,10 +202,11 @@ public class Calculation {
                     total += rate.getRate();
                     totalTarif += rate.getRate();
 
-                    timeList.add(time);
                     printRateEveryMinute(rate.getRate(), time);
                 }
 
+                timeList.add(time);
+                
                 // increment calculation time
                 time = time.plus(every, ChronoUnit.SECONDS);
             }
