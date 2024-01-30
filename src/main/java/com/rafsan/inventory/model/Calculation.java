@@ -57,7 +57,7 @@ public class Calculation {
                 sisaWaktu % 60
         );
     }
-    
+
     public boolean isLewat() {
         return sisaWaktu == 0;
     }
@@ -75,7 +75,7 @@ public class Calculation {
                 durasi % 60
         );
     }
-    
+
     public List<LocalDateTime> getTimeList() {
         return timeList;
     }
@@ -166,9 +166,11 @@ public class Calculation {
         }
 
         Rate firstRate = null;
+        LocalDateTime lastTime = null;
 
         // multi range rate
-        for (Rate rate : rates) {
+        for (int i = 0; i < rates.size(); i++) {
+            Rate rate = rates.get(i);
             if (firstRate == null) {
                 firstRate = rate;
             }
@@ -179,7 +181,9 @@ public class Calculation {
             // setup from date
             Calendar calendar = Calendar.getInstance();
             setCalendarDateTime(calendar, start, from);
-            LocalDateTime fromDate = begin.toLocalTime().withNano(0).isAfter(from)
+            LocalDateTime fromDate = lastTime != null
+                    ? lastTime
+                    : begin.toLocalTime().withNano(0).isAfter(from)
                     ? begin
                     : toLocalDateTime(calendar.getTime());
 
@@ -195,18 +199,41 @@ public class Calculation {
 
             double total = 0;
             while (time.isBefore(toDate) || time.isEqual(toDate)) {
+                // check if active timer is counted
                 boolean hourIsEqual = activeTimer.getHour() == time.getHour();
-                // check if time minute greater than pembulatan
-                if (!hourIsEqual || hourIsEqual && time.getMinute() > pembulatan) {
-                    // increment total tarif
-                    total += rate.getRate();
-                    totalTarif += rate.getRate();
+                boolean activeCounted = !hourIsEqual || hourIsEqual
+                        && time.getMinute() > pembulatan;
 
-                    printRateEveryMinute(rate.getRate(), time);
+                // check if to date is counted
+                boolean toDateHourIsEqual = toDate.getHour() == time.getHour();
+                boolean toDateCounted = !toDateHourIsEqual || toDateHourIsEqual
+                        && toDate.getMinute() > pembulatan;
+
+                // check if time minute greater than pembulatan
+                if (activeCounted || toDateCounted) {
+                    double tarif = rate.getRate();
+
+                    // check rate kelipatan sebelumnya yang menit belum penuh, menggunakan rate sebelumnya
+                    if (lastTime != null) {
+                        boolean isBeforeNewStartRate = lastTime.toLocalTime().isBefore(from);
+                        boolean isAfterNewStartRate = time.toLocalTime().isAfter(from);
+                        if (i > 0 && isBeforeNewStartRate && isAfterNewStartRate) {
+                            tarif = rates.get(i - 1).getRate();
+                        }
+                    }
+
+                    // increment total tarif
+                    total += tarif;
+                    totalTarif += tarif;
+
+                    printRateEveryMinute(tarif, time);
                 }
 
                 timeList.add(time);
-                
+
+                // store the last calculated time
+                lastTime = time;
+
                 // increment calculation time
                 time = time.plus(every, ChronoUnit.SECONDS);
             }
