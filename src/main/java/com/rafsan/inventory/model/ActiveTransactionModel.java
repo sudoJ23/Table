@@ -655,7 +655,11 @@ public class ActiveTransactionModel {
                 table.getTableTransaction().setStatus((short) 0);
                 table.getTableTransaction().setPowerFailure((short) 0);
                 if (result.isLewat()) {
-                    LocalDateTime lastSingleDate = result.getTimeList().get(result.getTimeList().size() - 1);
+                    LocalDateTime lastSingleDate = LocalDateTime.now();
+                    final List<LocalDateTime> timeList = result.getTimeList();
+                    if (!timeList.isEmpty()) {
+                        lastSingleDate = timeList.get(timeList.size() - 1);                        
+                    }
                     Rate rate = activePackage.getRateList().getAvailableRateByTime(lastSingleDate);
                     table.accumulate(false, rate.getMinRate());
                 } else {
