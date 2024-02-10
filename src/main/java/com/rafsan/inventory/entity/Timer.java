@@ -26,9 +26,9 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class Timer {
-    
+
     private Timeline timeline;
-    private int count = 0, ratecount=0;
+    private int count = 0, ratecount = 0;
     private int target = 0;
     private boolean isFinished = false;
     private boolean isRunning = false;
@@ -39,116 +39,117 @@ public class Timer {
     private ActivePackage activePackage;
     private static final StationModel stationModel = new StationModel();
     private boolean perhitunganSekarang = false, rateberbeda = false, waiting = false, terganti = false;
-    
+
     private Tables parent;
     protected double totalamount = 0;
     public int rateCount = 0;
     private LocalDateTime lastSingleDate = LocalDateTime.now();
-    
+
     private Stage packageControllerStage;
-    
+
     private int alt = 0;
     private int kedip = 0;
     private int shours, sminutes, sseconds; // mulai
     private int ehours, eminutes, eseconds; // sisa
     private boolean alerted = false;
-    
+
     private int dhours, dminutes, dseconds; // durasi
     private static final TableTransactionModel tableTransactionModel = new TableTransactionModel();
     private static final TransactionModel transactionModel = new TransactionModel();
-    
+
     public Rate rate, ratesebelumnya, rateselanjutnya, rateawal;
-    
+
     public void setLastSingleDate(LocalDateTime date) {
         this.lastSingleDate = date;
     }
-    
+
     public LocalDateTime getLastSingleDate() {
         return lastSingleDate;
     }
-    
-    public Timer() {}
-    
+
+    public Timer() {
+    }
+
     public Timer(int target) {
         this.target = target;
     }
-    
+
     public void setRateSebelumnya(Rate rate) {
         this.ratesebelumnya = rate;
     }
-    
+
     public Rate getRateSebelumnya() {
         return ratesebelumnya;
     }
-    
+
     public void setRateAwal(Rate rate) {
         this.rateawal = rate;
     }
-    
+
     public Rate getRateAwal() {
         return rateawal;
     }
-    
+
     public void setRateSelanjutnya(Rate rate) {
         this.rateselanjutnya = rate;
     }
-    
+
     public Rate getRateSelanjutnya() {
         return rateselanjutnya;
     }
-    
+
     public void setTotalAmount(double amount) {
         this.totalamount = amount;
     }
-    
+
     public void IncrementTotalAmount(double amount) {
         this.totalamount += amount;
     }
-    
+
     public void DecrementTotalAmount(double amount) {
         this.totalamount -= amount;
     }
-    
+
     public double getTotalAmount() {
         return totalamount;
     }
-    
+
     public void setActiveTransactionModel(ActiveTransactionModel model) {
         this.activeTransactionModel = model;
     }
-    
+
     public ActiveTransactionModel getActiveTransactionModel() {
         return activeTransactionModel;
     }
-    
+
     public void setParent(Tables parent) {
         this.parent = parent;
     }
-    
+
     public Tables getParent() {
         return parent;
     }
-    
+
     public void setStationController(DStationController StationController) {
         this.dstationController = StationController;
     }
-    
+
     public void setPackageController(packageController PackageController) {
         this.PackageController = PackageController;
     }
-    
+
     public packageController getPackageController() {
         return PackageController;
     }
-    
+
     public void setPackageControllerStage(Stage packageControllerStage) {
         this.packageControllerStage = packageControllerStage;
     }
-    
+
     public Stage getPackageControllerStage() {
         return packageControllerStage;
     }
-    
+
     public void checkTime() {
         if (sseconds >= 60) {
             sminutes++;
@@ -157,7 +158,7 @@ public class Timer {
             parent.tableTransaction.setDuration(getMulai());
             tableTransactionModel.updateTableTransaction(parent.tableTransaction);
 //            activeTransactionModel.update(parent);
-            
+
             if (sminutes >= 60 || sminutes == 60) {
                 shours++;
                 sminutes = 0;
@@ -165,27 +166,27 @@ public class Timer {
                 tableTransactionModel.updateTableTransaction(parent.tableTransaction);
             }
         }
-        
+
         if (eseconds < 0) {
             eminutes--;
             eseconds = 59;
-            
+
             if (eminutes < 0) {
                 ehours--;
                 eminutes = 59;
-                
+
                 if (ehours < 0) {
                     ehours = 0;
                 }
             }
         }
     }
-    
+
     public void setDurationSisa(String duration, String sisa) {
         dhours = Integer.valueOf(duration.split(":")[0]);
         dminutes = Integer.valueOf(duration.split(":")[1]);
         dseconds = Integer.valueOf(duration.split(":")[2]);
-        
+
         ehours = Integer.valueOf(sisa.split(":")[0]);
         eminutes = Integer.valueOf(sisa.split(":")[1]);
         eseconds = Integer.valueOf(sisa.split(":")[2]);
@@ -193,110 +194,109 @@ public class Timer {
 //        System.out.println(duration);
 //        System.out.println(sisa);
     }
-    
+
     public void setDuration(String duration) {
         dhours = Integer.valueOf(duration.split(":")[0]);
         dminutes = Integer.valueOf(duration.split(":")[1]);
         dseconds = Integer.valueOf(duration.split(":")[2]);
-        
+
         ehours = Integer.valueOf(duration.split(":")[0]);
         eminutes = Integer.valueOf(duration.split(":")[1]);
         eseconds = Integer.valueOf(duration.split(":")[2]);
     }
-    
+
     public void setMulai(String duration) {
         shours = Integer.valueOf(duration.split(":")[0]);
         sminutes = Integer.valueOf(duration.split(":")[1]);
         sseconds = Integer.valueOf(duration.split(":")[2]);
     }
-    
+
     public String getMulai() {
-        return String.format("%02d", shours)+":"+String.format("%02d", sminutes)+":"+String.format("%02d", sseconds);
+        return String.format("%02d", shours) + ":" + String.format("%02d", sminutes) + ":" + String.format("%02d", sseconds);
     }
-    
+
     public String getSisa() {
         if (target <= 0) {
-            return String.format("%02d", 0)+":"+String.format("%02d", 0)+":"+String.format("%02d", 0);
+            return String.format("%02d", 0) + ":" + String.format("%02d", 0) + ":" + String.format("%02d", 0);
         } else {
-            return String.format("%02d", ehours)+":"+String.format("%02d", eminutes)+":"+String.format("%02d", eseconds);
+            return String.format("%02d", ehours) + ":" + String.format("%02d", eminutes) + ":" + String.format("%02d", eseconds);
         }
     }
-    
+
     public String getDuration() {
-        return String.format("%02d", dhours)+":"+String.format("%02d", dminutes)+":"+String.format("%02d", dseconds);
+        return String.format("%02d", dhours) + ":" + String.format("%02d", dminutes) + ":" + String.format("%02d", dseconds);
     }
-    
+
     public void setTarget(int target) {
         this.target = target;
     }
-    
+
     public int getTarget() {
         return target;
     }
-    
+
     public int getCount() {
         return count;
     }
-    
+
     public void setCount(int count) {
         System.out.println("set timer count : " + count);
         this.count = count;
     }
-    
+
     public boolean getIsFinished() {
         return isFinished;
     }
-    
+
     public int getRateCount() {
         return ratecount;
     }
-    
+
     public void setRateCount(int count) {
         System.out.println("set rate count : " + count);
         this.ratecount = count;
     }
-    
+
     public void setIsFinished(boolean isFinished) {
         this.isFinished = isFinished;
     }
-    
+
     public void setIsRunning(boolean isRunning) {
         this.isRunning = isRunning;
     }
-    
+
     public boolean getIsRunning() {
         return isRunning;
     }
-    
+
     public void checkRate(Rate rate) {
         if (!isFinished) {
             int pembulatan = Integer.valueOf(parent.getTableTransaction().getTablePackage().getPembulatan());
             if (ratecount > pembulatan) {
                 if (!terganti) {
-                    // java.time.Duration duration = java.time.Duration.ofSeconds(rate.getEvery());
-                    // java.time.Duration evr = java.time.Duration.ofSeconds(rate.getEvery());
-                    // double totalmenit = duration.toMinutes();
-                    // double waktuBulat = Math.ceil(totalmenit / evr.toMinutes()) * evr.toMinutes();
-                    // double waktu = waktuBulat;
-                    // double tarif = rate.getRate();
-                    // double jumlahBlok = waktu / evr.toMinutes();
-                    // double biaya = jumlahBlok * tarif;
-                    Calculation result = new Calculation(parent.getTableTransaction(), Calendar.getInstance().getTime());
-                    totalamount = result.getTotalTarif();
-                    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-                    // System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + biaya);
-                    System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + totalamount);
-
-                    parent.accumulate(false, rateawal.getMinRate());
-                    // parent.accumulate(false, rate.getMinRate());
-
-                    parent.tableTransaction.setAmount(String.valueOf(totalamount));
-                    tableTransactionModel.updateTableTransaction(parent.tableTransaction);
-
-                    parent.transaction.setTotal(String.valueOf(parent.total));
-
+//                    java.time.Duration duration = java.time.Duration.ofSeconds(rate.getEvery());
+//                    java.time.Duration evr = java.time.Duration.ofSeconds(rate.getEvery());
+//                    double totalmenit = duration.toMinutes();
+//                    double waktuBulat = Math.ceil(totalmenit / evr.toMinutes()) * evr.toMinutes();
+//                    double waktu = waktuBulat;
+//                    double tarif = rate.getRate();
+//                    double jumlahBlok = waktu / evr.toMinutes();
+//                    double biaya = jumlahBlok * tarif;
+//                    totalamount += biaya;
+//                    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+//                    System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + biaya);
+//                    System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName() + " : " + totalamount);
+//
+//                    parent.accumulate(false, rateawal.getMinRate());
+//                    parent.accumulate(false, rate.getMinRate());
+//
+//                    parent.tableTransaction.setAmount(String.valueOf(totalamount));
+//                    tableTransactionModel.updateTableTransaction(parent.tableTransaction);
+//
+//                    parent.transaction.setTotal(String.valueOf(parent.total));
+//
 //                    new TransactionModel().updateTransaction(parent.transaction);
-                    transactionModel.updateTransaction(parent.transaction);
+//                    transactionModel.updateTransaction(parent.transaction);
                     terganti = true;
                 }
                 if (ratecount >= rate.getEvery()) {
@@ -310,36 +310,53 @@ public class Timer {
 //            System.out.println(alt);
 //            System.out.println("Last rate : " + totalamount);
 //            System.out.println(rateawal.getMinRate());
-            if (rateawal.getMinRate() != 0 && totalamount <= rateawal.getMinRate()) {
+//            if (rateawal.getMinRate() != 0 && totalamount <= rateawal.getMinRate()) {
 //                System.out.println("Minimal rate : " + rateawal.getMinRate());
-                this.totalamount = rateawal.getMinRate();
-                parent.accumulate(false, rateawal.getMinRate());
-                parent.tableTransaction.setAmount(String.valueOf(this.totalamount));
-                tableTransactionModel.updateTableTransaction(parent.tableTransaction);
-
-                parent.transaction.setTotal(String.valueOf(parent.total));
-
-                transactionModel.updateTransaction(parent.transaction);
-            } else {
+//                this.totalamount = rateawal.getMinRate();
+//                parent.accumulate(false, rateawal.getMinRate());
+//                parent.tableTransaction.setAmount(String.valueOf(this.totalamount));
+//                tableTransactionModel.updateTableTransaction(parent.tableTransaction);
+//
+//                parent.transaction.setTotal(String.valueOf(parent.total));
+//
+//                transactionModel.updateTransaction(parent.transaction);
+//            } else {
 //                if (rateCount <= 1) {
 //                    System.out.println("Sebelum " + this.totalamount);
 //                    this.totalamount = (int) (Math.round(totalamount / 1000.0) * 1000);
 //                    System.out.println("Sesudah " + this.totalamount);
 //                }
-                this.totalamount = Math.round(this.totalamount);
-                parent.accumulate(false, rateawal.getMinRate());
-                System.out.println(this.totalamount);
-                parent.tableTransaction.setAmount(String.valueOf(this.totalamount));
-                tableTransactionModel.updateTableTransaction(parent.tableTransaction);
-
-                parent.transaction.setTotal(String.valueOf(parent.total));
-
-                transactionModel.updateTransaction(parent.transaction);
-            }
+//                this.totalamount = Math.round(this.totalamount);
+//                parent.accumulate(false, rateawal.getMinRate());
+//                System.out.println(this.totalamount);
+//                parent.tableTransaction.setAmount(String.valueOf(this.totalamount));
+//                tableTransactionModel.updateTableTransaction(parent.tableTransaction);
+//
+//                parent.transaction.setTotal(String.valueOf(parent.total));
+//
+//                transactionModel.updateTransaction(parent.transaction);
+//            }
 //            activeTransactionModel.update(parent);
         }
+
+        final Calculation result = new Calculation(parent.getTableTransaction(), Calendar.getInstance().getTime());
+
+        // TODO: uncomment this line below to update only when last total amount != result total tarif
+        // if (this.totalamount == result.getTotalTarif()) return;
+        this.totalamount = result.getTotalTarif();
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+        System.out.println("[ " + formatter.format(new Date()) + " ] " + parent.station.getName());
+        System.out.println(result.toString());
+
+        parent.accumulate(false, rateawal.getMinRate());
+        parent.tableTransaction.setAmount(String.valueOf(totalamount));
+
+        tableTransactionModel.updateTableTransaction(parent.tableTransaction);
+        parent.transaction.setTotal(String.valueOf(parent.total));
+
+        transactionModel.updateTransaction(parent.transaction);
     }
-    
+
     public void mainFunction() {
         try {
             isFinished = false;
@@ -363,7 +380,7 @@ public class Timer {
                             } else if (ratecount >= ratesebelumnya.getEvery()) {
                                 checkRate(ratesebelumnya);
                                 parent.accumulate(false, rateawal.getMinRate());
-    //                            parent.accumulate(false, rateselanjutnya.getMinRate());
+                                //                            parent.accumulate(false, rateselanjutnya.getMinRate());
 
                                 parent.tableTransaction.setAmount(String.valueOf(totalamount));
                                 tableTransactionModel.updateTableTransaction(parent.tableTransaction);
@@ -380,7 +397,7 @@ public class Timer {
                             } else if (ratecount >= ratesebelumnya.getEvery()) {
                                 checkRate(ratesebelumnya);
                                 parent.accumulate(false, rateawal.getMinRate());
-    //                            parent.accumulate(false, rateselanjutnya.getMinRate());
+                                //                            parent.accumulate(false, rateselanjutnya.getMinRate());
 
                                 parent.tableTransaction.setAmount(String.valueOf(totalamount));
                                 tableTransactionModel.updateTableTransaction(parent.tableTransaction);
@@ -398,7 +415,7 @@ public class Timer {
                         } else if (ratecount >= ratesebelumnya.getEvery()) {
                             checkRate(ratesebelumnya);
                             parent.accumulate(false, rateawal.getMinRate());
-    //                        parent.accumulate(false, rateselanjutnya.getMinRate());
+                            //                        parent.accumulate(false, rateselanjutnya.getMinRate());
 
                             parent.tableTransaction.setAmount(String.valueOf(totalamount));
                             tableTransactionModel.updateTableTransaction(parent.tableTransaction);
@@ -423,7 +440,7 @@ public class Timer {
             e.printStackTrace();
         }
     }
-    
+
     public void restartTimer() {
         System.out.println("Stopping timer");
         timeline.stop();
@@ -439,7 +456,7 @@ public class Timer {
         System.out.println("Starting timer");
         timeline.play();
     }
-    
+
     public void startTimer(boolean isFirstLoad, boolean lewat) throws InterruptedException, IOException {
         this.isRunning = true;
         parent.station.setStatus("Active");
@@ -497,7 +514,7 @@ public class Timer {
         }
         core.tableStart++;
     }
-    
+
     public void cancel() throws InterruptedException, IOException {
         core.tableStart--;
         isRunning = false;
@@ -511,7 +528,7 @@ public class Timer {
             }
             index++;
         }
-        
+
         PackageController.setStatus(isRunning);
         dstationController.tStatusMeja.setImage(new Image("/images/stop.png"));
         dstationController.mainFrame.setStyle("-fx-background-color: #7F7F7F; -fx-background-radius: 10px;");
@@ -520,7 +537,7 @@ public class Timer {
         tableTransactionModel.updateTableTransaction(parent.getTableTransaction());
         timeline.stop();
         timeline = null;
-        
+
         count = 0;
         ratecount = 0;
         target = 0;
@@ -538,12 +555,12 @@ public class Timer {
         dminutes = 0;
         dseconds = 0;
         rate = null;
-        
+
         parent.total = 0;
         parent.totalsale = 0;
         System.out.println("Timer canceled");
     }
-    
+
     public void pauseTimer() throws InterruptedException, IOException {
         System.out.println("Is Finished " + isFinished);
         isFinished = true;
@@ -564,10 +581,10 @@ public class Timer {
             index++;
         }
         timeline.pause();
-        
+
         System.out.println("Timer paused");
     }
-    
+
     public void stopTimer(boolean lebih, boolean lewat) throws InterruptedException, IOException {
         System.out.println("Is Finished " + isFinished);
         isFinished = true;
