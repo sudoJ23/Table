@@ -668,7 +668,7 @@ public class ActiveTransactionModel {
                 }
                 new TableTransactionModel().updateTableTransaction(table.getTableTransaction());
                 TABLELIST.set(index, table);
-                boolean masih = result.getSisaWaktu() > 0;
+                boolean masih = result.getUnlimited();
                 if (!masih) {
                     Duration ss = Duration.ofSeconds(Long.parseLong(table.getTableTransaction().getTarget()));
                     table.getTableTransaction().setDuration(String.format("%02d:%02d:%02d", ss.toHours(), ss.toMinutes() % 60, ss.getSeconds() % 60));
