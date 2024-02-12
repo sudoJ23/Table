@@ -29,12 +29,14 @@ public class Calculation {
     private double totalTarif;
     private long sisaWaktu;
     private long durasi;
+    private boolean unlimited;
     private final List<LocalDateTime> timeList;
 
     public Calculation(TableTransaction transaction, Date upto) {
         this.totalTarif = 0;
         this.sisaWaktu = 0;
         this.durasi = 0;
+        this.unlimited = false;
         this.timeList = new ArrayList<>();
 
         this.calculate(transaction, upto);
@@ -59,7 +61,11 @@ public class Calculation {
     }
 
     public boolean isLewat() {
-        return sisaWaktu == 0;
+        return sisaWaktu == 0 && !unlimited;
+    }
+
+    public boolean getUnlimited() {
+        return unlimited;
     }
 
     public long getDurasi() {
@@ -98,6 +104,7 @@ public class Calculation {
         ActivePackage activePackage = tablePackage.getActivePackage();
         MRate mRate = activePackage.getRateList();
         Duration target = Duration.ofSeconds(Long.parseLong(transaction.getTarget()));
+        this.unlimited = target.equals(Duration.ofSeconds(0));
 
         // execute when transaction status = 0
         if (transaction.getStatus() != (short) 0) {
@@ -117,8 +124,8 @@ public class Calculation {
         LocalDateTime end = begin.plus(target.getSeconds(), ChronoUnit.SECONDS).withNano(0);
         Duration diffSisa = Duration.between(activeTimer, end);
         this.sisaWaktu = diffSisa.getSeconds();
-        Duration durasi = Duration.between(begin, activeTimer);
-        this.durasi = durasi.getSeconds();
+        Duration duration = Duration.between(begin, activeTimer);
+        this.durasi = duration.getSeconds();
 
         List<Rate> rates = mRate.getAvailableRates(begin, activeTimer);
 
@@ -129,13 +136,13 @@ public class Calculation {
 
         // single range rate
         if (rates.size() == 1) {
-            if (activeTimer.isAfter(end)) {
+            if (activeTimer.isAfter(end) && !unlimited) {
                 activeTimer = end;
                 if (this.sisaWaktu < 0) {
                     this.sisaWaktu = 0;
 
-                    durasi = Duration.between(begin, end);
-                    this.durasi = durasi.getSeconds();
+                    duration = Duration.between(begin, end);
+                    this.durasi = duration.getSeconds();
                 }
             }
 
