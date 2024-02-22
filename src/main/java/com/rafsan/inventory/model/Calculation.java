@@ -19,6 +19,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 /**
  *
@@ -26,11 +29,58 @@ import java.util.Locale;
  */
 public class Calculation {
 
+    private static class DateRange implements Comparable<DateRange>{
+
+        LocalDateTime start;
+        LocalDateTime end;
+
+        DateRange(LocalDateTime start, LocalDateTime end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof DateRange) {
+                return start.equals(((DateRange) obj).start) && end.equals(((DateRange) obj).end);
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 67 * hash + Objects.hashCode(this.start);
+            hash = 67 * hash + Objects.hashCode(this.end);
+            return hash;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(start.toString());
+            sb.append(" — ");
+            sb.append(end.toString());
+            return sb.toString();
+        }
+
+        @Override
+        public int compareTo(DateRange o) {
+            int compare = start.compareTo(o.start);
+            if (compare == 0) {
+                compare = end.compareTo(o.end);
+            }
+            return compare;
+        }
+    }
+
     private double totalTarif;
     private long sisaWaktu;
     private long durasi;
     private boolean unlimited;
     private final List<LocalDateTime> timeList;
+    private final Map<Calculation.DateRange, Double> priceMap;
 
     public Calculation(TableTransaction transaction, Date upto) {
         this.totalTarif = 0;
@@ -38,6 +88,7 @@ public class Calculation {
         this.durasi = 0;
         this.unlimited = false;
         this.timeList = new ArrayList<>();
+        this.priceMap = new TreeMap<>();
 
         this.calculate(transaction, upto);
     }
@@ -89,6 +140,12 @@ public class Calculation {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        for (Map.Entry<DateRange, Double> entry : priceMap.entrySet()) {
+            DateRange range = entry.getKey();
+            Double rate = entry.getValue();
+            sb.append("# ").append(range).append(" = ").append(rate);
+            sb.append("\n");
+        }
         sb.append("- total Tarif : Rp").append(Math.round(totalTarif));
         sb.append("\n");
         sb.append("- sisa Waktu : ").append(getSisaWaktuFormatted());
@@ -148,21 +205,48 @@ public class Calculation {
 
             Rate rate = rates.get(0);
             int every = rate.getEvery();
-            LocalDateTime time = begin.plus(every, ChronoUnit.SECONDS).withNano(0);
+            LocalDateTime time = begin.withNano(0);
+
+            // calculating price map
+            while (time.isBefore(activeTimer) || time.isEqual(activeTimer)) {
+                DateRange range = new DateRange(time, time.plus(every, ChronoUnit.SECONDS));
+                priceMap.put(range, null);
+                time = range.end.withNano(0);
+            }
+
+            time = begin.plus(1, ChronoUnit.MINUTES).withNano(0);
 
             while (time.isBefore(activeTimer) || time.isEqual(activeTimer)) {
-                boolean hourIsEqual = activeTimer.getHour() == time.getHour();
-                // check if time minute greater than pembulatan
-                if (!hourIsEqual || hourIsEqual && activeTimer.getMinute() > pembulatan) {
+                Map.Entry<DateRange, Double> foundEntry = null;
+                for (Map.Entry<DateRange, Double> entry : priceMap.entrySet()) {
+                    DateRange key = entry.getKey();
+                    if (time.isEqual(key.start) || (time.isAfter(key.start) && time.isBefore(key.end)) || time.isEqual(key.end)) {
+                        foundEntry = entry;
+                        break;
+                    }
+                }
+
+                if (foundEntry == null) {
+                    continue;
+                }
+
+                Double foundRate = foundEntry.getValue();
+                LocalDateTime foundStart = foundEntry.getKey().start;
+                long foundDuration = ChronoUnit.MINUTES.between(foundStart, time);
+                boolean isAfterPembulatan = foundDuration > pembulatan;
+                if (foundRate == null && isAfterPembulatan) {
+                    priceMap.put(foundEntry.getKey(), rate.getRate());
                     // increment total tarif
                     totalTarif += rate.getRate();
+                    printRateEveryMinute(rate.getRate(), time);
+                } else {
+                    printRateEveryMinute(0, time);
                 }
 
                 timeList.add(time);
-                printRateEveryMinute(rate.getRate(), time);
 
                 // increment calculation time
-                time = time.plus(every, ChronoUnit.SECONDS);
+                time = time.plus(1, ChronoUnit.MINUTES);
             }
 
             if (totalTarif > 0 && totalTarif < rate.getMinRate()) {
@@ -176,6 +260,26 @@ public class Calculation {
         LocalDateTime lastTime = null;
 
         // multi range rate
+        LocalDateTime time = begin.withNano(0);
+
+        // calculating price map
+        while (time.isBefore(activeTimer) || time.isEqual(activeTimer)) {
+            for (int i = 0; i < rates.size(); i++) {
+                Rate rate = rates.get(i);
+
+                LocalTime from = LocalTime.parse(rate.getMFromTime());
+                LocalTime to = LocalTime.parse(rate.getMToTime());
+
+                if (time.toLocalTime().equals(from) || (time.toLocalTime().isAfter(from) && time.toLocalTime().isBefore(to))) {
+                    int every = rate.getEvery();
+
+                    DateRange range = new DateRange(time, time.plus(every, ChronoUnit.SECONDS));
+                    priceMap.put(range, null);
+                    time = range.end.withNano(0);
+                }
+            }
+        }
+
         for (int i = 0; i < rates.size(); i++) {
             Rate rate = rates.get(i);
             if (firstRate == null) {
@@ -200,24 +304,28 @@ public class Calculation {
                     ? activeTimer
                     : toLocalDateTime(calendar.getTime());
 
-            int every = rate.getEvery();
-
-            LocalDateTime time = fromDate.plus(every, ChronoUnit.SECONDS).withNano(0);
+            time = fromDate.plus(1, ChronoUnit.MINUTES).withNano(0);
 
             double total = 0;
             while (time.isBefore(toDate) || time.isEqual(toDate)) {
-                // check if active timer is counted
-                boolean hourIsEqual = activeTimer.getHour() == time.getHour();
-                boolean activeCounted = !hourIsEqual || hourIsEqual
-                        && time.getMinute() > pembulatan;
+                Map.Entry<DateRange, Double> foundEntry = null;
+                for (Map.Entry<DateRange, Double> entry : priceMap.entrySet()) {
+                    DateRange key = entry.getKey();
+                    if (time.isEqual(key.start) || (time.isAfter(key.start) && time.isBefore(key.end))) {
+                        foundEntry = entry;
+                        break;
+                    }
+                }
 
-                // check if to date is counted
-                boolean toDateHourIsEqual = toDate.getHour() == time.getHour();
-                boolean toDateCounted = !toDateHourIsEqual || toDateHourIsEqual
-                        && toDate.getMinute() > pembulatan;
+                if (foundEntry == null) {
+                    continue;
+                }
 
-                // check if time minute greater than pembulatan
-                if (activeCounted || toDateCounted) {
+                Double foundRate = foundEntry.getValue();
+                LocalDateTime foundStart = foundEntry.getKey().start;
+                long foundDuration = ChronoUnit.MINUTES.between(foundStart, time);
+                boolean isAfterPembulatan = foundDuration > pembulatan;
+                if (foundRate == null && isAfterPembulatan) {
                     double tarif = rate.getRate();
 
                     // check rate kelipatan sebelumnya yang menit belum penuh, menggunakan rate sebelumnya
@@ -228,12 +336,13 @@ public class Calculation {
                             tarif = rates.get(i - 1).getRate();
                         }
                     }
-
+                    
+                    priceMap.put(foundEntry.getKey(), tarif);
                     // increment total tarif
-                    total += tarif;
                     totalTarif += tarif;
-
                     printRateEveryMinute(tarif, time);
+                } else {
+                    printRateEveryMinute(0, time);
                 }
 
                 timeList.add(time);
@@ -242,7 +351,7 @@ public class Calculation {
                 lastTime = time;
 
                 // increment calculation time
-                time = time.plus(every, ChronoUnit.SECONDS);
+                time = time.plus(1, ChronoUnit.MINUTES);
             }
 
             printRateTotal(rate.getMFromTime(), rate.getMToTime(), total);
